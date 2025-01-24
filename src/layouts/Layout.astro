@@ -4,38 +4,39 @@ interface Props {
 }
 
 const { title } = Astro.props
+import { ClientRouter } from 'astro:transitions'
 import '@fontsource/bricolage-grotesque/400.css'
 import NavBar from '../components/NavBar.astro'
 import Footer from '../components/Footer.astro'
+import { getTheme } from '../utils/theme'
 ---
 
-<script is:inline>
-  const theme = (() => {
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
-      return localStorage.getItem('theme') ?? 'light'
-    }
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark'
-    }
-    return 'light'
-  })()
-
-  if (theme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light')
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark')
-  }
-
-  window.localStorage.setItem('theme', theme)
-</script>
-
-<html
-  lang="en"
-  x-data="{darkMode: localStorage.getItem('darkMode')}"
-  x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))"
-  x-bind:data-theme="darkMode"
->
+<html lang="en">
   <head>
+    <script is:inline>
+      function setDarkMode(document) {
+        let theme = localStorage.theme
+
+        if (theme === undefined) {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+        }
+
+        localStorage.theme = theme
+
+        console.log(theme)
+
+        document.documentElement.dataset.theme = theme
+      }
+
+      setDarkMode(document)
+
+      document.addEventListener('astro:before-swap', (event) => {
+        setDarkMode(event.newDocument)
+      })
+    </script>
+    <ClientRouter />
     <meta charset="UTF-8" />
     <meta
       name="description"
@@ -101,6 +102,7 @@ import Footer from '../components/Footer.astro'
   }
 
   :root {
+    color-scheme: light dark;
     --zen-paper: #f2f0e3;
     --zen-dark: #202020;
     --zen-muted: rgba(0, 0, 0, 0.05);
